@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
+using TMPro;
 
 public class MainManager : MonoBehaviour
 {
@@ -11,6 +13,7 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public TextMeshProUGUI RecordText;
     public GameObject GameOverText;
     
     private bool m_Started = false;
@@ -18,10 +21,22 @@ public class MainManager : MonoBehaviour
     
     private bool m_GameOver = false;
 
-    
+    private string name;
+
+    private string record_name;
+    private int record_points;
+
+    private void Awake()
+    {
+        CargarProgreso();
+        RecordText.text = "Best Score: " + record_name + " : " + record_points;
+    }
+
     // Start is called before the first frame update
     void Start()
     {
+        name = MenuManager.Instance.playerName;
+
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -44,6 +59,7 @@ public class MainManager : MonoBehaviour
         {
             if (Input.GetKeyDown(KeyCode.Space))
             {
+               
                 m_Started = true;
                 float randomDirection = Random.Range(-1.0f, 1.0f);
                 Vector3 forceDir = new Vector3(randomDirection, 1, 0);
@@ -72,5 +88,39 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+        if (m_Points > record_points)
+        {
+            GuardarProgreso();
+        }
+    }
+
+    public class Record
+    {
+        public string name;
+        public int recordPoints;
+    }
+
+    void GuardarProgreso()
+    {
+        Record data = new Record();
+        data.name = name;
+        data.recordPoints = m_Points;
+
+        string json = JsonUtility.ToJson(data);
+
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    void CargarProgreso ()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            Record data = JsonUtility.FromJson<Record>(json);
+
+            record_name = data.name;
+            record_points = data.recordPoints;
+        }
     }
 }
